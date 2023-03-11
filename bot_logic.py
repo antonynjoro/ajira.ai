@@ -18,13 +18,13 @@ def ask_intro_question(sms, conversation_id, sender_number, contact_method, inco
             response=incoming_message,
             example_question=question
         )
-    # Send the message to the user
+    # Send the content to the user
     sms.send_message(conversation_id, intro_message + gpt_response)
 
 
 def ask_detail(sms, conversation_id, sender_number, incoming_message, detail):
     validation_parameters = [detail]
-    # Verify that the incoming message contains a name using the validate_response function
+    # Verify that the incoming content contains a name using the validate_response function
     validation_dict = sms.gpt_logic.validate_response(
         validation_parameters=validation_parameters,
         user_response=incoming_message
@@ -44,7 +44,7 @@ def ask_detail(sms, conversation_id, sender_number, incoming_message, detail):
                 response=incoming_message,
                 example_question=question
             )
-        # Send the message to the user
+        # Send the content to the user
         sms.send_message(conversation_id, gpt_response)
 
     # If the validation failed, add the list of validation questions to the unasked questions list in the database

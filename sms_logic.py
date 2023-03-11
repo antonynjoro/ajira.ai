@@ -1,19 +1,14 @@
 """Twilio SMS logic to send and receive messages with the help of GPTLogic and store them in MongoDB"""
 
 import os
-from twilio.rest import Client
-from flask import Flask, request
 
-import mongo_db_logic as db
+from flask import Flask
+from twilio.rest import Client
+
 import gpt_logic
+import mongo_db_logic as db
 
 app = Flask(__name__)
-
-
-
-
-
-
 
 
 class SMSLogic:
@@ -26,22 +21,13 @@ class SMSLogic:
         self.gpt_logic = gpt_logic.GPTLogic()
         self.preliminary_information_to_collect = ['name', 'email', 'address']
 
-
-
-    def send_message(self, conversation_id, message):
-        """Send a message to the user and save it to their user data in the database"""
+    def send_message(self, conversation_id, message, phone_number):
+        """Send a content to the user and save it to their user data in the database"""
         self.client.conversations \
             .v1 \
             .conversations(conversation_id) \
             .messages \
             .create(body=message)
-
-        db.save_message_to_database(
-            conversation_id=conversation_id,
-            message=message,
-            sender='Ajira_bot',
-            direction='outbound',
-        )
 
         return
 
@@ -59,4 +45,3 @@ class SMSLogic:
         """Get the user data from the database"""
         user_data = db.UserData.objects(conversation_id=conversation_id).first()
         return user_data
-

@@ -1,9 +1,9 @@
 
-# TODO: Function to send a message to the user
+# TODO: Function to send a content to the user
 # Initial functionality will be to use the console to emulate communicating with SMS
 
 
-# test the message bot
+# test the content bot
 
 
 # TODO: Function to add their response to the database
