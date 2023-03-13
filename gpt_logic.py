@@ -2,13 +2,14 @@
 import datetime
 import json
 import os
-import ast
+import tiktoken
+
 
 from openai import Completion, ChatCompletion
 
 
 class GPTLogic:
-    """contains the logic for the different types of prompts we can ask the job seeker"""
+    """contains the logic for the different types of prompts we can ask the job-seeker"""
     api_key = os.environ['OPENAI_API_KEY']
 
     def __init__(self):
@@ -55,7 +56,7 @@ class GPTLogic:
             frequency_penalty=0,
             presence_penalty=0
         )
-        print("Unparsed GPT Response", response)
+        print("Un-parsed GPT Response", response)
 
         # parse the response into a json object
         parsed_response = self.parse_davinci_response(response)
@@ -76,7 +77,7 @@ class GPTLogic:
 
     def summarize_messages(self, messages: list) -> str:
         """Takes a list of summary inputs and returns a string containing the generated summary"""
-        instruction = "Summarize the information below into all the necessary parts required to create a professional " \
+        instruction = "Summarize the information below into all the necessary parts required to create a professional "\
                       "resume. " \
                       "- Make sure to include any work experience descriptions if the user provided them. \n\n" \
                       f"{messages}"
@@ -101,17 +102,19 @@ class GPTLogic:
 
         context = self.context
         instruction = "- Use the summary below to create a professional compelling resume that would be" \
-                       "attractive to a recruiter.\n" \
-                       "- Expand on the descriptions of the work experience to create a full list of duties " \
-                       "that the user might also have done. \n" \
-                       "- If a piece of information is not provided, do not add it in the resume If something is in " \
-                       "the resume that is non-standard, edit it or removing to make it more attractive to a recruiter" \
-                       "\n\n" \
-                       "The the summary you should use to create the resume are:\n" \
-                       f"user's phone number: {user_phone_number}\n" \
-                       f"{resume_inputs}"  \
+                      "attractive to a recruiter.\n" \
+                      "- Expand on the descriptions of the work experience to create a full list of duties " \
+                      "that the user might also have done. \n" \
+                      "- Exclude information not provided from the resume. If something is in the "\
+                      "resume that is non-standard, edit it or removing to make it more attractive to a recruiter.\n" \
+                      "- Have education follow work experience" \
+                      "- Keep the resume length under 1,000 words" \
+                      "\n\n" \
+                      "The the summary you should use to create the resume are:\n" \
+                      f"user's phone number: {user_phone_number}\n" \
+                      f"{resume_inputs}"
 
-        prompt = [{"role": "system", "content": context+instruction}]
+        prompt = [{"role": "system", "content": context + instruction}]
         print(prompt)
 
         # create a response by calling the openai api
@@ -119,7 +122,7 @@ class GPTLogic:
             model=self.chat_model,
             messages=prompt,
             temperature=0.5,
-            max_tokens=2048,
+            max_tokens=3500,
         )
         print("Raw ChatGPT Response: ", response)
         gpt_response_sting = response.choices[0]['message']['content']
@@ -132,15 +135,16 @@ class GPTLogic:
         instruction = \
             "Ask friendly and concise questions to collect necessary information from the user for creating their " \
             "resume. Remember that the user is communicating via SMS.\n* " \
-            "If the user asks off-topic questions, respond with canned closing statements that encourage them to stay " \
-            "on topic, such as 'Let's focus on building your resume. Do you have any more information to add?'\n* " \
+            "If the user asks off-topic questions, respond with canned closing statements that encourage them to stay "\
+            "on topic, such as 'Let's focus on building your resume. Do you have any more information to add?'\n* "\
             "Be prepared for situations where the user may not have all the information needed for their resume.\n* " \
-            "Start with most recent work exp, skills and education. Get start and end dates for exp and ed. Continue" \
-            "prompting for any previous experience until the user indicates they have no more to provide.\n* " \
+            "Start with most recent work exp, skills and education. Get start and end dates for exp and ed. Ask for " \
+            "exp description eg achievements, responsibilities. Continue prompting for any previous experience until " \
+            "the user indicates they have no more to provide.\n* " \
             "For skills, ask about technical and soft skills that relate to their desired job. Technical skills may " \
             "include plumbing, forklift driving, electrician, or specialized certifications. Soft skills may include " \
-            "communication, teamwork, or problem-solving abilities. For education, ask about training or certifications" \
-            "that are relevant to the main work experience they have.\n* " \
+            "communication, teamwork, or problem-solving abilities. For education, ask about training or " \
+            "certifications that are relevant to the main work experience they have.\n* " \
             "if the user doesnt have or doesnt want to share some information, skip to the next section or ask " \
             "follow-up questions. For example, if they don't have work experience, ask about relevant internships or " \
             "volunteer work. Always be friendly and speak plainly.\n* " \
@@ -151,15 +155,14 @@ class GPTLogic:
             "For example, 'Here's a summary of your resume: you have 5 years of experience as a software engineer, " \
             "and you have experience with Python, Java, and C++.' Keep in mind that the medium is SMS so keep the " \
             "summary brief. \n* " \
-            "" \
-            "The data you need to collect is: first_name, first_name, user_email, user_address, user_city, user_state, " \
-            "user_zip, user_country, user_work_experience, user_education, user_skills\n" \
+            "The data you need to collect is: first_name, first_name, user_email, user_address, user_city, " \
+            "user_state, user_zip, user_country, user_work_experience, user_education, user_skills\n" \
             "Example:\n" \
             "ASSISTANT: Hi! Let's build your resume. What's your full name?\n" \
             "USER: My name is Antony Njoroge.\n" \
             "ASSISTANT: Hi Antony Njoroge! Use this number on your resume or a different one?" \
  \
-        # Prepend system content to the messages_dict
+            # Prepend system content to the messages_dict
         prompt = [{"role": "system", "content": self.context + instruction}] + messages_dict
         print(prompt)
 
@@ -201,4 +204,24 @@ class GPTLogic:
 
         return gpt_response_bool
 
-# TODO Break apart the chat prompts into separate functions and call them in the Main function
+
+def num_tokens_from_messages(messages, model="gpt-3.5-turbo-0301"):
+    """Returns the number of tokens used by a list of messages."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        encoding = tiktoken.get_encoding("cl100k_base")
+    if model == "gpt-3.5-turbo-0301":  # note: future models may deviate from this
+        num_tokens = 0
+        for message in messages:
+            num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+            for key, value in message.items():
+                num_tokens += len(encoding.encode(value))
+                if key == "name":  # if there's a name, the role is omitted
+                    num_tokens += -1  # role is always required and always 1 token
+        num_tokens += 2  # every reply is primed with <im_start>assistant
+        return num_tokens
+    else:
+        raise NotImplementedError(f"""num_tokens_from_messages() is not presently implemented for model {model}. See 
+        https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to 
+        tokens.""")

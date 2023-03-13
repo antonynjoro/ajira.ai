@@ -2,32 +2,69 @@
 import time
 
 from sms_logic import SMSLogic
-from flask import Flask, request
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+import mangum
 import mongo_db_logic
 import gpt_logic
+import docx
+from pydantic import BaseModel
+
+
+class Message(BaseModel):
+    """Message model"""
+    MessagingServiceSid: str
+    EventType: str
+    Attributes: str
+    DateCreated: str
+    Index: int
+    ChatServiceSid: str
+    MessageSid: str
+    AccountSid: str
+    Source: str
+    RetryCount: int
+    Author: str
+    ParticipantSid: str
+    Body: str
+    ConversationSid: str
+
 
 # simplify the  mongo_db_logic.UserData.objects call
 user_data = mongo_db_logic.UserData.objects
 
-app = Flask(__name__)
+app = FastAPI()
+handler = mangum.Mangum(app)
 
 
-@app.route('/sms', methods=['POST'])
-def receive_sms():
+@app.get('/')
+async def root():
+    return {'message': 'Hello World'}
+
+
+@app.post('/sms', response_class=JSONResponse)
+async def receive_sms(request: Request):
     """Handle incoming SMS messages sent to your Twilio phone number"""
     sms = SMSLogic()
     gpt = gpt_logic.GPTLogic()
     print('received sms')
-    print(request.form)
-    incoming_message = request.form['Body']
+
+    form_data = await request.form()
+    message_data = {key: str(value) for key, value in form_data.items()}
+    message = Message(**message_data)
+
+    # print the incoming response
+    print(message)
+
+    # print the incoming message
+    incoming_message = message.Body
     print(incoming_message)
-    conversation_id = request.form['ConversationSid']
+    conversation_id = message.ConversationSid
     print(conversation_id)
-    sender_number = request.form['Author']
+    sender_number = message.Author
     print(sender_number)
-    contact_method = request.form['Source']
+    contact_method = message.Source
     print(contact_method)
-    created_at = request.form['DateCreated']
+    created_at = message.DateCreated
     print(created_at)
 
     # If the content's conversation ID is not in the database, create a new user data object
@@ -97,6 +134,16 @@ def receive_sms():
                 resume_content=resume_content,
             )
 
+            # create a .docx file with the resume content
+            document = docx.Document()
+            document.add_paragraph(resume_content)
+
+            # save the document in the aws s3 bucket
+
+
+
+
+
         # main chat loop until the user provides the string '<END>'
         else:
             # add the gpt response to the database
@@ -127,8 +174,4 @@ def receive_sms():
         #       else they would like to change. If they don't, send a message saying that the resume is being
         #       corrected and will be sent to them soon.
 
-    return '', 204
-
-
-if __name__ == '__main__':
-    app.run()
+    return {'message:': 'success'}

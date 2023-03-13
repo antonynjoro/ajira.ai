@@ -2,13 +2,12 @@
 
 import os
 
-from flask import Flask
+
 from twilio.rest import Client
 
 import gpt_logic
 import mongo_db_logic as db
 
-app = Flask(__name__)
 
 
 class SMSLogic:
@@ -19,7 +18,7 @@ class SMSLogic:
         self.auth_token = os.environ['TWILIO_AUTH_TOKEN']
         self.client = Client(self.account_sid, self.auth_token)
         self.gpt_logic = gpt_logic.GPTLogic()
-        self.preliminary_information_to_collect = ['name', 'email', 'address']
+
 
     def send_message(self, conversation_id, message, phone_number):
         """Send a content to the user and save it to their user data in the database"""
