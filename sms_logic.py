@@ -1,10 +1,7 @@
 """Twilio SMS logic to send and receive messages with the help of GPTLogic and store them in MongoDB"""
 
 import os
-
-
 from twilio.rest import Client
-
 import gpt_logic
 import mongo_db_logic as db
 

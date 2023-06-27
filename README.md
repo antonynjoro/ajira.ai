@@ -6,8 +6,12 @@ This is project seeks to build a simple web application that allows users to bui
 python
 openai api
 twilio api
-flask
+FastAPI
 mongodb
-mongoeengine
+MongoEngine
+uvicorn
+mangum
+mongodb
+tiktoken api
 
 

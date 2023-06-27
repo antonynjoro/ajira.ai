@@ -1,14 +1,21 @@
-"""SMS chatbot that helps create a resume"""
-import time
+"""SMS chatbot that helps create a resume using GPT-3 and Twilio Conversations API"""
 
+import logging
+from aws_logic import create_resume_document
 from sms_logic import SMSLogic
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-import mangum
-import mongo_db_logic
+import mongo_db_logic as db
 import gpt_logic
-import docx
 from pydantic import BaseModel
+from short_url_logic import shorten_url
+
+app = FastAPI()
+user_data = db.UserData.objects
+sms = SMSLogic()
+gpt = gpt_logic.GPTLogic()
+
+logging.basicConfig(level=logging.INFO)
 
 
 class Message(BaseModel):
@@ -29,11 +36,55 @@ class Message(BaseModel):
     ConversationSid: str
 
 
-# simplify the  mongo_db_logic.UserData.objects call
-user_data = mongo_db_logic.UserData.objects
+def find_or_create_user(conversation_id, sender_number, source):
+    """Find or create a user in the database"""
+    user = user_data(conversation_id=conversation_id).first()
+    if not user:
+        logging.info("Creating new user data object")
+        db.create_user_data(
+            conversation_id=conversation_id,
+            phone_number=sender_number,
+            contact_method=source
+        )
+        user = user_data(conversation_id=conversation_id).first()
+    else:
+        logging.info("User already exists")
+    return user
 
-app = FastAPI()
-handler = mangum.Mangum(app)
+
+def generate_resume(conversation_id, sender_number, user, message_list):
+    """Generate a resume and send a download link to the user"""
+    user_name, resume_file_link = create_resume_document(
+        user=user,
+        message_list=message_list,
+        conversation_id=conversation_id,
+        sender_number=sender_number
+    )
+
+    # shorten the resume file link
+    short_url = shorten_url(resume_file_link)
+
+    # create a message to send to the user with a link to download their resume
+    link_message_text = f"Hi {user_name}, your resume is ready. " \
+                        f"Click the link below to download it: {short_url}"
+
+    # send a message to the user with a link to download their resume
+    sms.send_message(
+        message=link_message_text,
+        conversation_id=conversation_id,
+        phone_number=sender_number
+    )
+
+    # save message to database
+    db.save_message_to_database(
+        conversation_id=conversation_id,
+        content=link_message_text,
+        role='assistant',
+        phone_number=sender_number,
+    )
+
+    # update the user object to show that the resume has been generated
+    user.update(is_resume_generated=True)
 
 
 @app.get('/')
@@ -44,134 +95,63 @@ async def root():
 @app.post('/sms', response_class=JSONResponse)
 async def receive_sms(request: Request):
     """Handle incoming SMS messages sent to your Twilio phone number"""
-    sms = SMSLogic()
-    gpt = gpt_logic.GPTLogic()
-    print('received sms')
 
     form_data = await request.form()
     message_data = {key: str(value) for key, value in form_data.items()}
     message = Message(**message_data)
 
-    # print the incoming response
-    print(message)
+    logging.info(f"Incoming message: {message}")
 
-    # print the incoming message
     incoming_message = message.Body
-    print(incoming_message)
     conversation_id = message.ConversationSid
-    print(conversation_id)
     sender_number = message.Author
-    print(sender_number)
-    contact_method = message.Source
-    print(contact_method)
-    created_at = message.DateCreated
-    print(created_at)
 
-    # If the content's conversation ID is not in the database, create a new user data object
-    if not user_data(user_phone_number=sender_number).first():
-        print("No user found with that conversation ID")
-        mongo_db_logic.create_user_data(conversation_id=conversation_id, phone_number=sender_number,
-                                        contact_method=contact_method)
+    user = find_or_create_user(conversation_id, sender_number, message.Source)
 
     # Save the incoming message to the database
-    mongo_db_logic.save_message_to_database(
+    db.save_message_to_database(
         conversation_id=conversation_id,
         content=incoming_message,
         role='user',
         phone_number=sender_number,
     )
 
-    if user_data(conversation_id=conversation_id).first().is_resume_generated == False:
+    # Check if the system has already generated a resume for the user
+    if not user.is_resume_generated:
+        logging.info("Resume not generated")
 
-        # retrieve the messages list from the database
-        message_objects = user_data(conversation_id=conversation_id).first().messages
+        message_objects = user.messages
+        message_list = [dict(message.to_mongo()) for message in message_objects]
 
-        message_list = [message.to_mongo() for message in message_objects]
-
-        # get the content from the gpt chat method
+        # Get the response from the GPT-3 chatbot
         gpt_response_string = gpt.chat(message_list)['content']
 
-        # end state if the bot response contains the string '<END>'
+        db.save_message_to_database(
+            conversation_id=conversation_id,
+            content=gpt_response_string,
+            role='assistant',
+            phone_number=sender_number,
+        )
+
         if '<END>' in gpt_response_string:
-            # add the gpt response to the database
-            mongo_db_logic.save_message_to_database(
-                conversation_id=conversation_id,
-                content=gpt_response_string,
-                role='assistant',
-                phone_number=sender_number,
-            )
-
-            # remove the <END> string from the response
-            edited_gpt_response_string = gpt_response_string.replace('<END>', 'Malisia')
-            sms.send_message(
-                message=edited_gpt_response_string,
-                conversation_id=conversation_id,
-                phone_number=sender_number
-            )
-
-            # make the resume generated field in the database true
-            user_data(conversation_id=conversation_id).first().update(is_resume_generated=True)
-
-            # create a summary of the key information provided by the user  save it to the database in the UserInformationSummary field
-            mongo_db_logic.save_summary_to_database(
-                summary=gpt.summarize_messages(messages=message_list),
-                conversation_id=conversation_id
-            )
-
-            # pull the summary from the database
-            user_information_summary = user_data(
-                conversation_id=conversation_id).first().user_information_summary.information_summary
-
-            # Use the summary to generate a full resume and save it to the database
-            resume_content = gpt.generate_resume(
-                resume_inputs=user_information_summary,
-                user_phone_number=sender_number
-            )
-
-            # Save the resume to the database
-            mongo_db_logic.save_resume_to_database(
-                conversation_id=conversation_id,
-                resume_content=resume_content,
-            )
-
-            # create a .docx file with the resume content
-            document = docx.Document()
-            document.add_paragraph(resume_content)
-
-            # save the document in the aws s3 bucket
-
-
-
-
-
-        # main chat loop until the user provides the string '<END>'
+            logging.info("End state reached, generating resume...")
+            generate_resume(conversation_id, sender_number, user, message_list)
         else:
-            # add the gpt response to the database
-            mongo_db_logic.save_message_to_database(
-                conversation_id=conversation_id,
-                content=gpt_response_string,
-                role='assistant',
-                phone_number=sender_number,
-            )
-
-            # send the gpt response to the user via sms
+            logging.info("Main chat loop. Sending response to user...")
             sms.send_message(
                 message=gpt_response_string,
                 conversation_id=conversation_id,
                 phone_number=sender_number
             )
 
-    elif user_data(conversation_id=conversation_id).first().is_resume_generated == True:
-        # send a message to the user asking if they have any corrections to the resume
+    elif user.is_resume_generated:
+        logging.info("Resume already generated")
         sms.send_message(
             message="Would you like to make any corrections to your resume?",
             conversation_id=conversation_id,
             phone_number=sender_number
         )
 
-        # TODO: send the user a message with a link to download their resume from the database then send a message
-        #       asking if they have any corrections to the resume. If they do, loop through asking if there is anyting
-        #       else they would like to change. If they don't, send a message saying that the resume is being
-        #       corrected and will be sent to them soon.
+    return {'message': 'success'}
 
-    return {'message:': 'success'}
+#success
