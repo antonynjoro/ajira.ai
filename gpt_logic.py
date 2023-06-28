@@ -25,7 +25,9 @@ class GPTLogic:
         return data
 
     def get_prompt(self, method):
-        context = self.prompts["context"]
+
+        today_date = str(datetime.datetime.now())
+        context = self.prompts["context"] + today_date + "\n"
 
         return context + self.prompts[method]
 
