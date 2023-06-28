@@ -7,6 +7,7 @@ from mongoengine import connect, Document, StringField, DateTimeField, IntField,
     EmbeddedDocumentField, EmbeddedDocument, BooleanField, register_connection
 import datetime
 
+
 # Connect to MongoDB
 connect(
     'Ajira_db',
