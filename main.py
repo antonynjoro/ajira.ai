@@ -26,6 +26,8 @@ class Message(BaseModel):
     AccountSid: str
     Body: str
     ConversationSid: str
+    Author: str  # sender number
+    Source: str  # source
 
 
 def find_or_create_user(conversation_id, sender_number, source):
