@@ -88,12 +88,11 @@ async def root():
 async def receive_sms(request: Request):
     """Handle incoming SMS messages sent to your Twilio phone number"""
 
-    data = await request.json()  # Get request body as JSON
-
-    # Log the data
-    logger.info(f"Incoming data: {request}")
-
     form_data = await request.form()
+
+    #log the incoming message
+    logging.info(f"Incoming message: {form_data}")
+
     message_data = {key: str(value) for key, value in form_data.items()}
     message = Message(**message_data)
 
