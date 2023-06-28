@@ -114,6 +114,9 @@ async def receive_sms(request: Request):
         phone_number=sender_number,
     )
 
+    # Pull the user object from the database again to get the latest data
+    user = user_data(conversation_id=conversation_id).first()
+
     # Check if the system has already generated a resume for the user
     if not user.is_resume_generated:
         logging.info("Resume not generated")

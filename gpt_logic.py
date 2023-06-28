@@ -25,7 +25,9 @@ class GPTLogic:
         return data
 
     def get_prompt(self, method):
-        return self.prompts[method]
+        context = self.prompts["context"]
+
+        return context + self.prompts[method]
 
     def parse_davinci_response(self, response: json):
         # parse gpt-3 response into a dictionary or string
