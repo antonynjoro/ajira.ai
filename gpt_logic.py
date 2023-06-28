@@ -20,17 +20,9 @@ class GPTLogic:
     @staticmethod
     def load_prompts_from_file():
         with open('prompt_library.json', 'r') as f: # load prompts from file
-            raw_prompts = json.load(f)
+            data = json.load(f)
 
-        today_date = datetime.date.today().strftime("%B %d, %Y")
-
-        edited_prompts = {
-            (key, str(value).replace("{TODAY_DATE}", today_date))
-            for key, value
-            in raw_prompts.items()
-        }
-
-        return edited_prompts
+        return data
 
     def get_prompt(self, method):
         return self.prompts[method]
