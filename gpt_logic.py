@@ -13,7 +13,7 @@ class GPTLogic:
 
     def __init__(self):
         self.davinci_model = "text-davinci-003"
-        self.chat_model = "gpt-3.5"
+        self.chat_model = "gpt-3.5-turbo-0613"
         self.prompts = self.load_prompts_from_file()
         logging.basicConfig(level=logging.INFO)
 
