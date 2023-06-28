@@ -91,7 +91,7 @@ async def receive_sms(request: Request):
     data = await request.json()  # Get request body as JSON
 
     # Log the data
-    logger.info(f"Incoming data: {data}")
+    logger.info(f"Incoming data: {request}")
 
     form_data = await request.form()
     message_data = {key: str(value) for key, value in form_data.items()}
