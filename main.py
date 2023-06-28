@@ -15,23 +15,15 @@ user_data = db.UserData.objects
 sms = SMSLogic()
 gpt = gpt_logic.GPTLogic()
 
+# Configure logging
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class Message(BaseModel):
     """Message model"""
-    MessagingServiceSid: str
-    EventType: str
-    Attributes: str
-    DateCreated: str
-    Index: int
-    ChatServiceSid: str
     MessageSid: str
     AccountSid: str
-    Source: str
-    RetryCount: int
-    Author: str
-    ParticipantSid: str
     Body: str
     ConversationSid: str
 
@@ -95,6 +87,11 @@ async def root():
 @app.post('/sms', response_class=JSONResponse)
 async def receive_sms(request: Request):
     """Handle incoming SMS messages sent to your Twilio phone number"""
+
+    data = await request.json()  # Get request body as JSON
+
+    # Log the data
+    logger.info(f"Incoming data: {data}")
 
     form_data = await request.form()
     message_data = {key: str(value) for key, value in form_data.items()}
