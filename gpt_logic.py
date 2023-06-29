@@ -54,9 +54,7 @@ class GPTLogic:
         prompt = [{"role": "system", "content": self.get_prompt('chat')}] + messages_dict
         logging.info(prompt)
         response = self.api_call(prompt, self.chat_model, 0, self.functions)
-        return response.choices[0]['message']
-
-
+        return response['choices'][0]['message']
 
     @staticmethod
     def get_functions():
@@ -65,7 +63,7 @@ class GPTLogic:
             {
                 "name": "generate_resume",
                 "description": "This function should be triggered when the user indicates that they are satisfied with "
-                               "the generated summary",
+                               "the generated summary after giving their resume information",
                 "parameters": {
                     "type": "object",
                     "properties": {},
