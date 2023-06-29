@@ -92,8 +92,10 @@ class GPTLogic:
     def summarize_messages(self, messages: list) -> str:
         prompt = [{"role": "system", "content": self.get_prompt('summarize_messages').format(messages=messages)}]
         logging.info(prompt)
-        response = self.api_call(prompt, self.chat_model, 0, 2048)
-        return response.choices[0]['message']['content']
+        response = self.api_call(prompt, self.chat_model, 0, )
+        return response['choices'][0]['message']['content']
+
+
 
     def generate_resume(self, resume_inputs: list, user_phone_number) -> str:
         prompt = [
@@ -110,7 +112,7 @@ class GPTLogic:
             temperature=0.5,
             max_tokens=3500,
         )
-        return response.choices[0]['message']['content']
+        return response['choices'][0]['message']['content']
 
 
 
@@ -118,7 +120,7 @@ class GPTLogic:
         prompt = [{"role": "system", "content": self.get_prompt('get_user_name').format(summary_text=summary_text)}]
         logging.info(prompt)
         response = self.api_call(prompt, self.chat_model, 0, None)
-        return response.choices[0]['message']['content']
+        return response['choices'][0]['message']['content']
 
 
 def num_tokens_from_messages(messages, tokenizer):
