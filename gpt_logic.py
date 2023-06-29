@@ -18,7 +18,7 @@ class GPTLogic:
         self.functions = self.get_functions()
         logging.basicConfig(level=logging.INFO)
 
-    def api_call(self, prompt: list, model: str, temperature: int,  functions: list = [], max_tokens: int = None,) -> dict:
+    def api_call(self, prompt: list, model: str, temperature: int,  functions: list = None, max_tokens: int = None,) -> dict:
         """call the openai api"""
         logging.info(f"Using prompt: {prompt}")
 
