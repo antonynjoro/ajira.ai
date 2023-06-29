@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import mongo_db_logic as db
 import gpt_logic
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from short_url_logic import shorten_url
 
 app = FastAPI()
@@ -22,12 +22,12 @@ logger = logging.getLogger(__name__)
 
 class Message(BaseModel):
     """Message model"""
-    MessageSid: str
-    AccountSid: str
-    Body: str
-    ConversationSid: str
-    Author: str  # sender number
-    Source: str  # source
+    MessageSid: str = Field(..., description="Twilio message id")
+    AccountSid: str = Field(..., description="Twilio account id")
+    Body: str = Field(..., description="Message content")
+    ConversationSid: str = Field(..., description="Twilio conversation id")
+    Author: str = Field(..., description="Message author")
+    Source: str = Field(..., description="Message source, either 'sms' or 'whatsapp'")
 
 
 def find_or_create_user(conversation_id, sender_number, source):
@@ -92,7 +92,7 @@ async def receive_sms(request: Request):
 
     form_data = await request.form()
 
-    #log the incoming message
+    # log the incoming message
     logging.info(f"Incoming message: {form_data}")
 
     message_data = {key: str(value) for key, value in form_data.items()}
@@ -155,4 +155,4 @@ async def receive_sms(request: Request):
 
     return {'message': 'success'}
 
-#success
+# success
