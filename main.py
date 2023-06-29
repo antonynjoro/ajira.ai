@@ -48,6 +48,7 @@ def find_or_create_user(conversation_id, sender_number, source):
 
 def generate_resume(conversation_id, sender_number, user, message_list):
     """Generate a resume and send a download link to the user"""
+    logger.info("generate_resume main.py")
     user_name, resume_file_link = create_resume_document(
         user=user,
         message_list=message_list,
