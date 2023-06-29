@@ -48,6 +48,8 @@ def create_resume_document(user, message_list, conversation_id, sender_number) -
 
     # create a summary of the key information provided by the user  save it to the database in the
     # UserInformationSummary field
+    logging.info(f"Message list to be summarized: {message_list}")
+
     user_information_summary = db.save_summary_to_database(
         summary=gpt.summarize_messages(messages=message_list),
         conversation_id=conversation_id

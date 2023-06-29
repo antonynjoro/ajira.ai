@@ -137,6 +137,8 @@ async def receive_sms(request: Request):
 
         if '<END>' in gpt_response_string:
             logging.info("End state reached, generating resume...")
+            message_list = [dict(message.to_mongo()) for message in message_objects]
+            logging.info("Message list being exported from main.py at if '<END>': ", message_list)
             generate_resume(conversation_id, sender_number, user, message_list)
         else:
             logging.info("Main chat loop. Sending response to user...")
