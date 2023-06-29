@@ -35,10 +35,17 @@ class GPTLogic:
         response_message = response["choices"][0]["message"]
         if response_message.get("function_call"):
             logging.info("GPT has determined that this is the end of the conversation")
-
-            return {'content': 'Thank you for using Ajira we will be sending you '
+            output = {
+                      "choices": [
+                        {
+                          "message": {
+                            'content': 'Thank you for using Ajira we will be sending you '
                                'your resume shortly <END>'
-                    }
+                          }
+                        }
+                      ],
+            }
+            return output
 
         return response
 
@@ -58,7 +65,7 @@ class GPTLogic:
             {
                 "name": "generate_resume",
                 "description": "This function should be triggered when the user indicates that they are satisfied with "
-                               "the summary of their information and/or would like to generate a resume",
+                               "the generated summary",
                 "parameters": {
                     "type": "object",
                     "properties": {},
