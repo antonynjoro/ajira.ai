@@ -59,6 +59,11 @@ class GPTLogic:
                 "name": "generate_resume",
                 "description": "This function should be triggered when the user indicates that they are satisfied with "
                                "the summary of their information and/or would like to generate a resume",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": [],
+                }
             }
         ]
         return functions
