@@ -101,7 +101,8 @@ class GPTLogic:
 
     def summarize_messages(self, messages: list) -> str:
         prompt = [{"role": "system", "content": self.get_prompt('summarize_messages').format(messages=messages)}]
-        logging.info(prompt)
+        logging.info("summarize_messages gptlogic file Messages:", messages)
+        logging.info("summarize_message gptlogic Prompt", prompt)
         response = self.api_call(prompt, self.chat_model, 0, )
         return response['choices'][0]['message']['content']
 
