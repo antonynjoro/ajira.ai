@@ -19,18 +19,26 @@ class GPTLogic:
         self.functions = self.get_functions()
         logging.basicConfig(level=logging.INFO)
 
-    def api_call(self, prompt: list, model: str, temperature: int,  functions: list , max_tokens: int = None,) -> dict:
+    def api_call(self, prompt: list, model: str, temperature: int,  functions: list = None , max_tokens: int = None,) -> dict:
         """call the openai api"""
         logging.info(f"Using prompt: {prompt}")
 
-        response = ChatCompletion.create(
-            model=model,
-            messages=prompt,
-            functions=functions,
-            function_call= "auto",
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+        if functions is not None:
+            response = ChatCompletion.create(
+                model=model,
+                messages=prompt,
+                functions=functions,
+                function_call= "auto",
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        else:
+            response = ChatCompletion.create(
+                model=model,
+                messages=prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
 
         # Process function call
         response_message = response["choices"][0]["message"]
