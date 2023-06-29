@@ -18,7 +18,7 @@ class GPTLogic:
         self.functions = self.get_functions()
         logging.basicConfig(level=logging.INFO)
 
-    def api_call(self, prompt: list, model: str, temperature: str, max_tokens: int = None, functions: list = None) -> dict:
+    def api_call(self, prompt: list, model: str, temperature: int,  functions: list = [], max_tokens: int = None,) -> dict:
         """call the openai api"""
         logging.info(f"Using prompt: {prompt}")
 
@@ -46,7 +46,7 @@ class GPTLogic:
         """chat with the user using the gpt-3.5-turbo model"""
         prompt = [{"role": "system", "content": self.get_prompt('chat')}] + messages_dict
         logging.info(prompt)
-        response = self.api_call(prompt, "gpt-3.5-turbo", 0, None)
+        response = self.api_call(prompt, self.chat_model, 0, self.functions)
         return response.choices[0]['message']
 
 
