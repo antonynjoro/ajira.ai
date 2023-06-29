@@ -13,12 +13,13 @@ class GPTLogic:
 
     def __init__(self):
         self.davinci_model = "text-davinci-003"
-        self.chat_model = "gpt-3.5-turbo-0613"
+        self.functions_chat_model = "gpt-3.5-turbo-0613"
+        self.chat_model = "gpt-3.5-turbo"
         self.prompts = self.load_prompts_from_file()
         self.functions = self.get_functions()
         logging.basicConfig(level=logging.INFO)
 
-    def api_call(self, prompt: list, model: str, temperature: int,  functions: list = None, max_tokens: int = None,) -> dict:
+    def api_call(self, prompt: list, model: str, temperature: int,  functions: list , max_tokens: int = None,) -> dict:
         """call the openai api"""
         logging.info(f"Using prompt: {prompt}")
 
@@ -53,7 +54,7 @@ class GPTLogic:
         """chat with the user using the gpt-3.5-turbo model"""
         prompt = [{"role": "system", "content": self.get_prompt('chat')}] + messages_dict
         logging.info(prompt)
-        response = self.api_call(prompt, self.chat_model, 0, self.functions)
+        response = self.api_call(prompt, self.functions_chat_model, 0, self.functions)
         return response['choices'][0]['message']
 
     @staticmethod
@@ -63,7 +64,8 @@ class GPTLogic:
             {
                 "name": "generate_resume",
                 "description": "This function should be triggered when the user indicates that they are satisfied with "
-                               "the generated summary after giving their resume information",
+                               "the generated summary after giving their resume information"
+                               "The function should also be called when a user asks for a resume to be generated",
                 "parameters": {
                     "type": "object",
                     "properties": {},
