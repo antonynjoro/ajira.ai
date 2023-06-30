@@ -1,5 +1,5 @@
 """SMS chatbot that helps create a resume using GPT-3 and Twilio Conversations API"""
-from .celery_app import celery_app
+from celery_app import celery_app
 import logging
 from aws_logic import create_resume_document
 from sms_logic import SMSLogic
