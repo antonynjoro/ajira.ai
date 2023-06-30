@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 import mongo_db_logic as db
 import gpt_logic
 from pydantic import BaseModel, Field
-from short_url_logic import shorten_url
+from celery_worker_functions import generate_resume
 
 app = FastAPI()
 user_data = db.UserData.objects
