@@ -1,10 +1,17 @@
-from celery_app import celery_app
 import mongo_db_logic as db
 import logging
 
 from aws_logic import create_resume_document
 from short_url_logic import shorten_url
 from sms_logic import SMSLogic
+
+#construct a celery app
+import os
+from celery import Celery
+
+BROKER_URL = os.environ.get('CLOUDAMQP_URL', 'pyamqp://guest@localhost//')
+celery_app = Celery('tasks', broker=BROKER_URL)
+
 
 user_data = db.UserData.objects
 sms = SMSLogic()
@@ -14,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name='celery_worker_functions.generate_resume')
+@celery_app.task
 def generate_resume(conversation_id, sender_number, message_list):
     """Generate a resume and send a download link to the user"""
     user = user_data(conversation_id=conversation_id).first()
