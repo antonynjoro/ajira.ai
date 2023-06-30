@@ -1,4 +1,4 @@
-from celery_app import celery_app
+from .celery_app import celery_app
 import mongo_db_logic as db
 import logging
 
@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task
+@celery_app.task(name='celery_worker_functions.generate_resume')
 def generate_resume(conversation_id, sender_number, message_list):
     """Generate a resume and send a download link to the user"""
     user = user_data(conversation_id=conversation_id).first()
