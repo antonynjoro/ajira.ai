@@ -1,4 +1,4 @@
-from .celery_app import celery_app
+from celery_app import celery_app
 import mongo_db_logic as db
 import logging
 
