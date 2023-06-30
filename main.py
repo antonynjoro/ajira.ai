@@ -1,5 +1,5 @@
 """SMS chatbot that helps create a resume using GPT-3 and Twilio Conversations API"""
-
+from .celery_app import celery_app
 import logging
 from aws_logic import create_resume_document
 from sms_logic import SMSLogic
@@ -45,9 +45,11 @@ def find_or_create_user(conversation_id, sender_number, source):
         logging.info("User already exists")
     return user
 
-
-def generate_resume(conversation_id, sender_number, user, message_list):
+@celery_app.task
+def generate_resume(conversation_id, sender_number, message_list):
     """Generate a resume and send a download link to the user"""
+    user = user_data(conversation_id=conversation_id).first()
+
     logger.info("generate_resume main.py")
     user_name, resume_file_link = create_resume_document(
         user=user,
@@ -139,7 +141,7 @@ async def receive_sms(request: Request):
             logging.info("End state reached, generating resume...")
             message_list = [dict(message.to_mongo()) for message in message_objects]
             logging.info("Message list being exported from main.py at if '<END>': ", message_list)
-            generate_resume(conversation_id, sender_number, user, message_list)
+            generate_resume(conversation_id, sender_number, message_list)
         else:
             logging.info("Main chat loop. Sending response to user...")
             sms.send_message(
