@@ -1,4 +1,5 @@
 """SMS chatbot that helps create a resume using GPT-3 and Twilio Conversations API"""
+import json
 import logging
 from sms_logic import SMSLogic
 from fastapi import FastAPI, Request
@@ -81,8 +82,50 @@ async def receive_sms(request: Request):
     # Pull the user object from the database again to get the latest data
     user = user_data(conversation_id=conversation_id).first()
 
+
+    # if the count of messages exceeds 50, cut off the user from the chatbot
+    if user.messages.count() > 50 and user.user_status == 'active':
+        logging.info(f"User has exceeded the message limit Phone: {user.user_phone_number} ")
+        user.user_status = 'suspended'
+
+        with open('prompt_library.json', 'r') as f:
+            user_suspension_message = json.load(f)["user_suspension_message"]
+
+        sms.send_message(
+            message=user_suspension_message,
+            conversation_id=conversation_id,
+            phone_number=sender_number
+        )
+
+        db.save_message_to_database(
+            conversation_id=conversation_id,
+            content=user_suspension_message,
+            role='assistant',
+            phone_number=sender_number,
+        )
+
+    elif user.user_status == 'suspended':
+        logging.info(f"User has been suspended Phone: {user.user_phone_number} ")
+        with open('prompt_library.json', 'r') as f:
+            user_suspension_message = json.load(f)["user_suspension_message"]
+
+        if user.messages[-1].content == user_suspension_message:
+            return {'message': 'User suspended'}
+        sms.send_message(
+            message=user_suspension_message,
+            conversation_id=conversation_id,
+            phone_number=sender_number
+        )
+
+        db.save_message_to_database(
+            conversation_id=conversation_id,
+            content=user_suspension_message,
+            role='assistant',
+            phone_number=sender_number,
+        )
+
     # Check if the system has already generated a resume for the user
-    if not user.is_resume_generated:
+    elif not user.is_resume_generated:
         logging.info("Resume not generated")
 
         message_objects = user.messages
@@ -113,11 +156,22 @@ async def receive_sms(request: Request):
 
     elif user.is_resume_generated:
         logging.info("Resume already generated")
+        with open('prompt_library.json', 'r') as f:  # load prompts from file
+            canned_end_message = json.load(f)["canned_end_message"]
         sms.send_message(
-            message="Would you like to make any corrections to your resume?",
+            message=canned_end_message,
             conversation_id=conversation_id,
             phone_number=sender_number
         )
+
+        db.save_message_to_database(
+            conversation_id=conversation_id,
+            content=canned_end_message,
+            role='assistant',
+            phone_number=sender_number,
+        )
+
+
 
     return {'message': 'success'}
 
