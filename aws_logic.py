@@ -3,12 +3,18 @@ from datetime import datetime
 from os import remove, environ
 
 import boto3
+import botocore
 import docx
 
 import gpt_logic
 import mongo_db_logic as db
 
-s3 = boto3.client('s3', aws_access_key_id=environ['AWS_ACCESS_KEY_ID'], aws_secret_access_key=environ['AWS_SECRET_ACCESS_KEY'])
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=environ['AWS_ACCESS_KEY_ID'],
+    aws_secret_access_key=environ['AWS_SECRET_ACCESS_KEY'],
+    config=botocore.client.Config(signature_version='s3v4')
+)
 
 
 def create_presigned_url(bucket_name, object_name, expiration=86400):
