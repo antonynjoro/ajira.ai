@@ -11,6 +11,7 @@ import mongo_db_logic as db
 
 s3 = boto3.client(
     's3',
+    region_name='us-east-2',
     aws_access_key_id=environ['AWS_ACCESS_KEY_ID'],
     aws_secret_access_key=environ['AWS_SECRET_ACCESS_KEY'],
     config=botocore.client.Config(signature_version='s3v4')
