@@ -19,7 +19,8 @@ class GPTLogic:
         self.functions = self.get_functions()
         logging.basicConfig(level=logging.INFO)
 
-    def api_call(self, prompt: list, model: str, temperature: int,  functions: list = None , max_tokens: int = None,) -> dict:
+    def api_call(self, prompt: list, model: str, temperature: int, functions: list = None,
+                 max_tokens: int = None, ) -> dict:
         """call the openai api"""
         logging.info(f"Using prompt: {prompt}")
 
@@ -28,7 +29,7 @@ class GPTLogic:
                 model=model,
                 messages=prompt,
                 functions=functions,
-                function_call= "auto",
+                function_call="auto",
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
@@ -52,14 +53,14 @@ class GPTLogic:
         if response_message.get("function_call"):
             logging.info("GPT has determined that this is the end of the conversation")
             output = {
-                      "choices": [
-                        {
-                          "message": {
+                "choices": [
+                    {
+                        "message": {
                             'content': 'Thank you for using Ajira we will be sending you '
-                               'your resume shortly <END>'
-                          }
+                                       'your resume shortly <END>'
                         }
-                      ],
+                    }
+                ],
             }
             return output
 
@@ -92,7 +93,7 @@ class GPTLogic:
 
     @staticmethod
     def load_prompts_from_file():
-        with open('prompt_library.json', 'r') as f: # load prompts from file
+        with open('prompt_library.json', 'r') as f:  # load prompts from file
             data = json.load(f)
 
         return data
@@ -104,22 +105,21 @@ class GPTLogic:
 
         return context + self.prompts[method]
 
-
-
     def summarize_messages(self, messages: list) -> str:
-        prompt = [{"role": "system", "content": self.get_prompt('summarize_messages') + str(messages)}]
+        prompt = [
+            {"role": "system", "content": self.get_prompt('summarize_messages') + "```\n" + str(messages) + "\n```"}
+        ]
         logging.info(f"summarize_messages gptlogic file Messages: {messages}")
         logging.info(f"summarize_message gptlogic Prompt: {prompt}")
         response = self.api_call(prompt, self.chat_model, 0)
         return response['choices'][0]['message']['content']
 
-
-
     def generate_resume(self, resume_inputs: list, user_phone_number) -> str:
         prompt = [
             {
                 "role": "system",
-                "content": self.get_prompt('generate_resume') + f"Phone Number: {user_phone_number}. Resume Inputs: {resume_inputs}"
+                "content": self.get_prompt('generate_resume')
+                           + f"```\nPhone Number: {user_phone_number}. \n Resume Inputs: {resume_inputs}```"
             },
         ]
         logging.info("Generating Resume")
@@ -135,10 +135,13 @@ class GPTLogic:
         )
         return response['choices'][0]['message']['content']
 
-
-
     def get_user_name(self, summary_text: str) -> str:
-        prompt = [{"role": "system", "content": self.get_prompt('get_user_name') + f"{summary_text}"}]
+        prompt = [
+            {
+                "role": "system",
+                "content": self.get_prompt('get_user_name')
+                           + f"```{summary_text}```\nName: "}
+        ]
         logging.info(prompt)
         response = self.api_call(prompt, self.chat_model, 0, None)
         return response['choices'][0]['message']['content']
@@ -150,6 +153,5 @@ def num_tokens_from_messages(messages, tokenizer):
         num_tokens += tokenizer.tokenize(message['content']).count_tokens()
     return num_tokens
 
+
 gpt_logic = GPTLogic()
-
-
