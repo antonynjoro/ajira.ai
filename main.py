@@ -84,7 +84,7 @@ async def receive_sms(request: Request):
 
 
     # if the count of messages exceeds 50, cut off the user from the chatbot
-    if user.messages.count() > 50 and user.user_status == 'active':
+    if len(user.messages) > 50 and user.user_status == 'active':
         logging.info(f"User has exceeded the message limit Phone: {user.user_phone_number} ")
         user.user_status = 'suspended'
 
