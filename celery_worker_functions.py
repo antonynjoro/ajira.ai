@@ -5,7 +5,7 @@ from aws_logic import create_resume_document
 from short_url_logic import shorten_url
 from sms_logic import SMSLogic
 
-#construct a celery app
+# construct a celery app
 import os
 from celery import Celery
 

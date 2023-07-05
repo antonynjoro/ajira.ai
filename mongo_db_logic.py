@@ -56,7 +56,7 @@ class UserData(Document):
     conversation_id = StringField(required=True)
     user_phone_number = StringField(required=True, unique=True, max_length=20, min_length=10, regex=r'^\+?1?\d{9,15}$',
                                     error_message='Phone number must be entered in the format: \'+999999999\'. Up to 15 digits allowed.')
-    user_status = StringField(required=True, choices=['active', 'suspended'])
+    user_status = StringField(required=True, choices=['active', 'suspended'], default='active')
     contact_method = StringField(required=True, error_message='Contact method must be either \'SMS\' or \'Whatsapp\'')
     user_id = StringField(default=generate_random_user_id)
     is_resume_generated = BooleanField(default=False)
